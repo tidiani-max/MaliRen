@@ -1,0 +1,13 @@
+{
+  "description": "MaliREN offers a comprehensive frontend for an education and research network, providing users with access to resources, events, and institutional information.",
+  "icons": {
+    "icon": "/assets/maliren-logo.jpg"
+  },
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

@@ -1,0 +1,18 @@
+# Development helpers: ONLY PostgreSQL (+ Mailpit mail catcher) so you can run the API and the frontend with npm on your machine.
+# Credentials match backend/.env.example. Local development only  never expose this database.
+#   docker compose -f docker-compose.dev.yml up -d
+name: maliren-dev
+services:
+  db:
+    image: postgres:16-alpine
+    environment: { POSTGRES_USER: maliren, POSTGRES_PASSWORD: maliren, POSTGRES_DB: maliren }
+    ports: ["127.0.0.1:5432:5432"]
+    volumes:
+      - devdata:/var/lib/postgresql/data
+      - ./scripts/init-test-db.sql:/docker-entrypoint-initdb.d/10-test-db.sql:ro
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U maliren -d maliren"], interval: 5s, timeout: 5s, retries: 15 }
+  mailpit:
+    image: axllent/mailpit:latest
+    ports: ["127.0.0.1:1025:1025", "127.0.0.1:8025:8025"]
+volumes:
+  devdata:

@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+uploads/
+uploads-test/
+*.log
+.DS_Store
+e2e/__pycache__/

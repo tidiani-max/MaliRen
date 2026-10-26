@@ -1,0 +1,103 @@
+# MaliREN  local / single-server stack: PostgreSQL + Express API + background worker + nginx frontend + Mailpit.
+# Start:  node scripts/init-env.mjs   (creates .env with random secrets)   then   docker compose up --build
+name: maliren
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: maliren
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run "node scripts/init-env.mjs" or copy .env.example to .env and set POSTGRES_PASSWORD}
+      POSTGRES_DB: maliren
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U maliren -d maliren"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+    # Not published to the host by default. Uncomment to connect with a local SQL client:
+    # ports: ["127.0.0.1:5432:5432"]
+
+  api:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+    environment: &api-env
+      NODE_ENV: production
+      PORT: "4000"
+      DATABASE_URL: postgresql://maliren:${POSTGRES_PASSWORD}@db:5432/maliren
+      JWT_SECRET: ${JWT_SECRET:?Run "node scripts/init-env.mjs" or set JWT_SECRET in .env}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080}
+      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-http://localhost:8080}
+      TRUST_PROXY: "1"
+      # Browsers accept Secure cookies on http://localhost only in some browsers (not Safari): keep false for local
+      # HTTP, set COOKIE_SECURE=true as soon as the site is served over HTTPS.
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      COOKIE_SAMESITE: ${COOKIE_SAMESITE:-lax}
+      UPLOAD_DIR: /app/uploads
+      MAIL_MODE: ${MAIL_MODE:-smtp}
+      MAIL_FROM: ${MAIL_FROM:-MaliREN <no-reply@maliren.ml>}
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      ADMIN_NOTIFY_EMAIL: ${ADMIN_NOTIFY_EMAIL:-}
+      AUTOMATIONS_ENABLED: ${AUTOMATIONS_ENABLED:-true}
+      ALLOW_DEMO_SEED: ${ALLOW_DEMO_SEED:-false}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-Maliren#Demo2026}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+      EMBEDDED_WORKER: "false"        # the dedicated `worker` service runs scheduled jobs
+    volumes:
+      - uploads:/app/uploads
+    ports:
+      - "127.0.0.1:4000:4000"         # API + Swagger UI (http://localhost:4000/docs); bound to localhost only
+
+  # One-shot: loads the prototype content (flagged as demo) and users into a brand-new database, then exits.
+  seed:
+    build: ./backend
+    restart: "no"
+    depends_on:
+      api: { condition: service_healthy }
+    environment: *api-env
+    command: ["node", "dist/src/db/seed.js", "--if-empty"]
+    healthcheck:
+      disable: true
+
+  worker:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      api: { condition: service_healthy }
+    environment: *api-env
+    command: ["node", "dist/src/worker.js"]
+    volumes:
+      - uploads:/app/uploads          # cleanup job deletes expired temporary uploads
+    healthcheck:
+      disable: true
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: /api/v1
+    restart: unless-stopped
+    depends_on:
+      api: { condition: service_healthy }
+    ports:
+      - "${WEB_PORT:-8080}:80"
+
+  # Development mail catcher: SMTP on mailpit:1025, inbox UI on http://localhost:8025. Remove in production.
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8025:8025"
+
+volumes:
+  pgdata:
+  uploads:

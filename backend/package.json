@@ -1,0 +1,62 @@
+{
+  "name": "maliren-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MaliREN backend API (Express 5 + TypeScript + PostgreSQL + Drizzle ORM)",
+  "main": "dist/src/server.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "dev:worker": "tsx watch src/worker.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/src/server.js",
+    "start:worker": "node dist/src/worker.js",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "db:migrate:prod": "node dist/src/db/migrate.js",
+    "db:seed": "tsx src/db/seed.ts",
+    "db:seed:prod": "node dist/src/db/seed.js",
+    "db:reset": "tsx src/db/reset.ts",
+    "automation:run": "tsx src/automation/cli.ts",
+    "automation:run:prod": "node dist/src/automation/cli.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "drizzle-orm": "^0.45.4",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "nodemailer": "^10.2.1",
+    "pg": "^8.16.0",
+    "pino": "^9.7.0",
+    "pino-http": "^10.5.0",
+    "swagger-ui-express": "^5.0.1",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.9",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^22.15.0",
+    "@types/nodemailer": "^6.4.17",
+    "@types/pg": "^8.15.4",
+    "@types/supertest": "^6.0.3",
+    "@types/swagger-ui-express": "^4.1.8",
+    "drizzle-kit": "^0.31.4",
+    "pino-pretty": "^13.0.0",
+    "supertest": "^7.1.1",
+    "tsx": "^4.20.3",
+    "typescript": "~5.8.3",
+    "vitest": "^3.2.4"
+  }
+}
